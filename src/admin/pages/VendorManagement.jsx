@@ -4,22 +4,58 @@ import VendorCard from "../components/VendorCard";
 import VendorTable from "../components/VendorTable";
 import VendorModal from "../components/VendorModal";
 import { useData } from "../../contexts/DataContext";
+import Alert from "../components/Alert";
 
 const VendorManagement = () => {
-  const { vendors } = useData();
+  const { vendors, addVendor } = useData();
   const [viewMode, setViewMode] = useState("list"); // 'list' or 'grid'
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showAddModal, setShowAddModal] = useState(false);
 
-  const filteredVendors = vendors.filter((vendor) => {
-    const matchesSearch =
-      vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vendor.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus =
-      statusFilter === "all" || vendor.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+  const [alertVariant, setAlertVariant] = useState("success"); // 'success' or 'error' or 'warning'
+
+  const showAlertMessage = (message, variant = "success") => {
+    setAlertMessage(message);
+    setAlertVariant(variant);
+    setShowAlert(true);
+  };
+
+  const handleVendorSave = async (result) => {
+    if (result.success) {
+      await addVendor(result.data);
+      showAlertMessage(
+        result.mode === "add"
+          ? "Vendor added successfully!"
+          : "Vendor updated successfully!",
+        "success"
+      );
+      setShowAddModal(false);
+    } else {
+      showAlertMessage(result.error || "Failed to save vendor", "error");
+    }
+  };
+
+  const handleVendorUpdate = (result) => {
+    if (result.success) {
+      showAlertMessage("Vendor updated successfully!", "success");
+    } else {
+      showAlertMessage(result.error || "Failed to update vendor", "error");
+    }
+  };
+
+  const filteredVendors =
+    vendors &&
+    vendors.filter((vendor) => {
+      const matchesSearch =
+        vendor.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        vendor.email?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus =
+        statusFilter === "all" || vendor.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
 
   return (
     <div className="space-y-6">
@@ -112,11 +148,20 @@ const VendorManagement = () => {
 
       {/* Content */}
       {viewMode === "list" ? (
-        <VendorTable vendors={filteredVendors} />
+        <VendorTable
+          vendors={filteredVendors}
+          onVendorUpdate={handleVendorUpdate}
+          onAlert={showAlertMessage}
+        />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {filteredVendors.map((vendor) => (
-            <VendorCard key={vendor.id} vendor={vendor} />
+            <VendorCard
+              key={vendor.id}
+              vendor={vendor}
+              onVendorUpdate={handleVendorUpdate}
+              onAlert={showAlertMessage}
+            />
           ))}
         </div>
       )}
@@ -141,8 +186,17 @@ const VendorManagement = () => {
           isOpen={showAddModal}
           onClose={() => setShowAddModal(false)}
           mode="add"
+          onSave={handleVendorSave}
         />
       )}
+
+      {/* Alert */}
+      <Alert
+        message={alertMessage}
+        variant={alertVariant}
+        open={showAlert}
+        onClose={() => setShowAlert(false)}
+      />
     </div>
   );
 };

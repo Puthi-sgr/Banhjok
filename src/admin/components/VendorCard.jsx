@@ -3,15 +3,38 @@ import { Link } from "react-router-dom";
 import { Star, MapPin, Phone, Mail, Edit, Trash2, Eye } from "lucide-react";
 import { useData } from "../../contexts/DataContext";
 import VendorModal from "./VendorModal";
+import noProfile from "../../assets/images/no-profile.png";
 
-const VendorCard = ({ vendor }) => {
+const VendorCard = ({ vendor, onVendorUpdate, onAlert }) => {
   const { deleteVendor } = useData();
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const handleDelete = () => {
-    deleteVendor(vendor.id);
+  const handleDelete = async () => {
+    const result = await deleteVendor(vendor.id);
+    if (result.success) {
+      if (onAlert) {
+        onAlert("Vendor deleted successfully!", "success");
+      }
+    } else {
+      if (onAlert) {
+        onAlert(result.error || "Failed to delete vendor", "error");
+      }
+    }
     setShowDeleteConfirm(false);
+  };
+
+  const handleVendorSave = (result) => {
+    if (result.success) {
+      setShowEditModal(false);
+      // Call parent callback if provided
+      if (onVendorUpdate) {
+        onVendorUpdate(result);
+      }
+    } else {
+      // Handle error - could show alert here if needed
+      console.error("Failed to update vendor:", result.error);
+    }
   };
 
   const statusColors = {
@@ -26,7 +49,7 @@ const VendorCard = ({ vendor }) => {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow duration-200">
         <div className="relative">
           <img
-            src={vendor.image}
+            src={vendor.image || noProfile}
             alt={vendor.name}
             className="w-full h-48 object-cover rounded-t-lg"
           />
@@ -92,7 +115,7 @@ const VendorCard = ({ vendor }) => {
 
           <div className="flex space-x-2">
             <Link
-              to={`/vendors/${vendor.id}`}
+              to={`/dashboard/vendors/${vendor.id}`}
               className="flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors duration-200"
             >
               <Eye className="h-4 w-4 mr-1" />
@@ -123,6 +146,7 @@ const VendorCard = ({ vendor }) => {
           onClose={() => setShowEditModal(false)}
           mode="edit"
           vendor={vendor}
+          onSave={handleVendorSave}
         />
       )}
 

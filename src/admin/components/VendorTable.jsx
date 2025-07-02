@@ -3,15 +3,41 @@ import { Link } from "react-router-dom";
 import { Star, Edit, Trash2, Eye } from "lucide-react";
 import VendorModal from "./VendorModal";
 import { useData } from "../../contexts/DataContext";
+import noProfile from "../../assets/images/no-profile.png";
 
-const VendorTable = ({ vendors }) => {
+const VendorTable = ({ vendors, onVendorUpdate, onAlert }) => {
   const { deleteVendor } = useData();
   const [editingVendor, setEditingVendor] = useState(null);
   const [deletingVendor, setDeletingVendor] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const handleDelete = (vendor) => {
-    deleteVendor(vendor.id);
+  const handleDelete = async (vendor) => {
+    setIsDeleting(true);
+    const result = await deleteVendor(vendor.id);
+    if (result.success) {
+      if (onAlert) {
+        onAlert("Vendor deleted successfully!", "success");
+      }
+    } else {
+      if (onAlert) {
+        onAlert(result.error || "Failed to delete vendor", "error");
+      }
+    }
     setDeletingVendor(null);
+    setIsDeleting(false);
+  };
+
+  const handleVendorSave = (result) => {
+    if (result.success) {
+      setEditingVendor(null);
+      // Call parent callback if provided
+      if (onVendorUpdate) {
+        onVendorUpdate(result);
+      }
+    } else {
+      // Handle error - could show alert here if needed
+      console.error("Failed to update vendor:", result.error);
+    }
   };
 
   const statusColors = {
@@ -52,16 +78,16 @@ const VendorTable = ({ vendors }) => {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {vendors.map((vendor) => (
+              {vendors.map((vendor, index) => (
                 <tr
-                  key={vendor.id}
+                  key={index}
                   className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <img
                         className="h-10 w-10 rounded-full object-cover"
-                        src={vendor.image}
+                        src={vendor.image || noProfile}
                         alt={vendor.name}
                       />
                       <div className="ml-4">
@@ -142,6 +168,7 @@ const VendorTable = ({ vendors }) => {
           onClose={() => setEditingVendor(null)}
           mode="edit"
           vendor={editingVendor}
+          onSave={handleVendorSave}
         />
       )}
 
@@ -165,9 +192,13 @@ const VendorTable = ({ vendors }) => {
               </button>
               <button
                 onClick={() => handleDelete(deletingVendor)}
-                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors duration-200"
+                className="flex-1 px-4 flex items-center justify-center py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors duration-200"
               >
-                Delete
+                {isDeleting ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                ) : (
+                  "Delete"
+                )}
               </button>
             </div>
           </div>

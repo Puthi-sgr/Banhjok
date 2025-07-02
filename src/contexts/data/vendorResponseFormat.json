@@ -1,0 +1,47 @@
+{
+  "GET ALL VENDORS (/api/admin/vendors)": {
+    "success": true,
+    "message": "Vendors fetched successfully",
+    "data": [
+      {
+        "id": 1,
+        "name": "John Doe",
+        "email": "john.doe@example.com",
+        "phone": "+1234567890",
+        "address": "123 Main St",
+        "food_types": ["Pizza", "Burger", "Salad"],
+        "rating": 4.5,
+        "image": "https://via.placeholder.com/150"
+      }
+    ]
+  },
+
+  "GET VENDOR BY ID (/api/admin/vendors/{id})": {
+    "success": true,
+    "message": "Vendor fetched successfully",
+    "data": {
+      "vendor": {
+        "id": 1,
+        "name": "John Doe",
+        "email": "john.doe@example.com",
+        "phone": "+1234567890",
+        "address": "123 Main St",
+        "food_types": ["Pizza", "Burger", "Salad"],
+        "rating": 4.5,
+        "image": "https://via.placeholder.com/150"
+      },
+      "foods": [
+        {
+          "id": 1,
+          "name": "Pizza",
+          "price": 10.99,
+          "description": "A delicious pizza with cheese and tomato",
+          "rating": 4.5,
+          "readyTime": 30,
+          "category": "Pizza",
+          "image": "https://via.placeholder.com/150"
+        }
+      ]
+    }
+  }
+}

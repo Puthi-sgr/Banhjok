@@ -16,15 +16,15 @@ import {
 const AuthPage = () => {
   const { user, loginCustomer, loginVendor, loginAdmin, registerCustomer } = useAuth();
   const navigate = useNavigate();
-  const [userType, setUserType] = useState('customer'); // 'customer', 'vendor', 'admin'
+  const [userType, setUserType] = useState('admin'); // 'customer', 'vendor', 'admin'
   const [isRegister, setIsRegister] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
-    password: ''
+    email: 'systemAdmin@example.com',
+    password: 'AdminPassword123'
   });
 
   // Redirect if already logged in
@@ -127,7 +127,7 @@ const AuthPage = () => {
         }
       }
     } catch (error) {
-      setErrors({ submit: error.message });
+      setErrors({ submit: "Something went wrong, please try again!" });
     } finally {
       setLoading(false);
     }

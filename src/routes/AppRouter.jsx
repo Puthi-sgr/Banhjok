@@ -9,6 +9,9 @@ import AuthPage from "../auth/AuthPage";
 import ProtectedRoute from "./ProtectedRoute";
 import Home from "../clients/pages/Home";
 import VendorDashboard from "../vendor/pages/VendorDashboard";
+import OrderDetail from "../admin/pages/OrderDetail";
+import CustomerManagement from "../admin/pages/CustomerManagement";
+import CustomerProfile from "../admin/pages/CustomerProfile";
 
 const AppRouter = () => {
   return (
@@ -30,7 +33,10 @@ const AppRouter = () => {
           <Route path="vendors" element={<VendorManagement />} />
           <Route path="vendors/:id" element={<VendorDetails />} />
           <Route path="orders" element={<OrderManagement />} />
+          <Route path="orders/:id" element={<OrderDetail />} />
           <Route path="profile" element={<AdminProfile />} />
+          <Route path="customers" element={<CustomerManagement />} />
+          <Route path="customers/:id" element={<CustomerProfile />} />
         </Route>
         <Route path="*" element={<Navigate to="/auth" replace />} />
 

@@ -20,8 +20,6 @@ const AdminProfile = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Here you would typically save to your backend
-    console.log("Saving profile:", formData);
     setIsEditing(false);
   };
 

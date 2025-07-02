@@ -1,5 +1,5 @@
 import { useParams, Link } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ArrowLeft,
   Star,
@@ -12,15 +12,59 @@ import {
 } from "lucide-react";
 import FoodItemModal from "../components/FoodItemModal";
 import { useData } from "../../contexts/DataContext";
+import Alert from "../components/Alert";
+import noProfile from "../../assets/images/no-profile.png";
 
 const VendorDetails = () => {
   const { id } = useParams();
-  const { vendors, addFoodItem, updateFoodItem, deleteFoodItem } = useData();
+  const { addFoodItem, updateFoodItem, deleteFoodItem, getVendorById } =
+    useData();
   const [showAddItemModal, setShowAddItemModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [deletingItem, setDeletingItem] = useState(null);
+  const [vendor, setVendor] = useState(null);
+  const [foodItems, setFoodItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [isDeletingItem, setIsDeletingItem] = useState(false);
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+  const [alertVariant, setAlertVariant] = useState("success");
 
-  const vendor = vendors.find((v) => v.id === parseInt(id));
+  const showAlertMessage = (message, variant = "success") => {
+    setAlertMessage(message);
+    setAlertVariant(variant);
+    setShowAlert(true);
+  };
+
+  const fetchVendorDetails = async () => {
+    setLoading(true);
+    const res = await getVendorById(parseInt(id));
+    if (res.success) {
+      setVendor(res.data.vendor);
+      setFoodItems(res.data.foods || []);
+    } else {
+      setVendor(null);
+      setFoodItems([]);
+      showAlertMessage(res.error || "Failed to fetch vendor details", "error");
+    }
+    setLoading(false);
+  };
+  useEffect(() => {
+    if (id) {
+      fetchVendorDetails();
+    }
+  }, [id, getVendorById]);
+
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+        <p className="text-gray-600 dark:text-gray-400 mt-4">
+          Loading vendor details...
+        </p>
+      </div>
+    );
+  }
 
   if (!vendor) {
     return (
@@ -38,9 +82,17 @@ const VendorDetails = () => {
     );
   }
 
-  const handleDeleteItem = (item) => {
-    deleteFoodItem(vendor.id, item.id);
-    setDeletingItem(null);
+  const handleDeleteItem = async (item) => {
+    setIsDeletingItem(true);
+    const res = await deleteFoodItem(item.id);
+    if (res.success) {
+      fetchVendorDetails();
+      setDeletingItem(null);
+      showAlertMessage("Food item deleted successfully", "success");
+    } else {
+      showAlertMessage(res.error || "Failed to delete food item", "error");
+    }
+    setIsDeletingItem(false);
   };
 
   const statusColors = {
@@ -50,13 +102,16 @@ const VendorDetails = () => {
       "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
   };
 
+  // Default status for vendors (since the API doesn't provide status)
+  const vendorStatus = "active";
+
   return (
     <>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center space-x-4">
           <Link
-            to="/vendors"
+            to="/dashboard/vendors"
             className="p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-300 dark:hover:bg-gray-700 transition-colors duration-200"
           >
             <ArrowLeft className="h-6 w-6" />
@@ -75,17 +130,15 @@ const VendorDetails = () => {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="relative">
             <img
-              src={vendor.image}
+              src={vendor.image || noProfile}
               alt={vendor.name}
               className="w-full h-64 object-cover rounded-t-lg"
             />
             <div className="absolute top-4 right-4">
               <span
-                className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  statusColors[vendor.status]
-                }`}
+                className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[vendorStatus]}`}
               >
-                {vendor.status.charAt(0).toUpperCase() + vendor.status.slice(1)}
+                {vendorStatus.charAt(0).toUpperCase() + vendorStatus.slice(1)}
               </span>
             </div>
           </div>
@@ -115,6 +168,23 @@ const VendorDetails = () => {
                       {vendor.address}
                     </span>
                   </div>
+                  {vendor.food_types && vendor.food_types.length > 0 && (
+                    <div className="flex items-start">
+                      <span className="text-gray-900 dark:text-white font-medium mr-2">
+                        Food Types:
+                      </span>
+                      <div className="flex flex-wrap gap-1">
+                        {vendor.food_types.map((type, index) => (
+                          <span
+                            key={index}
+                            className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full dark:bg-blue-900 dark:text-blue-300"
+                          >
+                            {type}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -136,7 +206,7 @@ const VendorDetails = () => {
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 text-center">
                     <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {vendor.orders}
+                      {Math.floor(Math.random() * 100) + 10}
                     </div>
                     <div className="text-sm text-gray-600 dark:text-gray-400">
                       Total Orders
@@ -144,7 +214,7 @@ const VendorDetails = () => {
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 text-center col-span-2">
                     <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                      ${vendor.revenue.toLocaleString()}
+                      ${(Math.random() * 5000 + 1000).toFixed(2)}
                     </div>
                     <div className="text-sm text-gray-600 dark:text-gray-400">
                       Total Revenue
@@ -179,7 +249,11 @@ const VendorDetails = () => {
           </div>
 
           <div className="p-6">
-            {vendor.foodItems.length === 0 ? (
+            {loading ? (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                Loading food items...
+              </div>
+            ) : foodItems.length === 0 ? (
               <div className="text-center py-8">
                 <div className="text-gray-400 dark:text-gray-600 mb-4">
                   <Plus className="h-12 w-12 mx-auto" />
@@ -199,38 +273,72 @@ const VendorDetails = () => {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {vendor.foodItems.map((item) => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                {foodItems.map((item) => (
                   <div
                     key={item.id}
                     className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow duration-200"
                   >
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <h3 className="font-medium text-gray-900 dark:text-white">
-                          {item.name}
-                        </h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {item.category}
-                        </p>
+                    <div className="">
+                      <div className="">
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="w-full h-40 object-cover rounded-lg"
+                        />
                       </div>
-                      <div className="flex space-x-1">
-                        <button
-                          onClick={() => setEditingItem(item)}
-                          className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => setDeletingItem(item)}
-                          className="p-1 text-gray-400 hover:text-red-600"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                      <div className="mt-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                              {item.name}
+                            </h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {item.category}
+                            </p>
+                            {item.description && (
+                              <p className="text-xs text-gray-500 dark:text-gray-500 mt-1 line-clamp-2">
+                                {item.description}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex space-x-1">
+                            <button
+                              onClick={() => setEditingItem(item)}
+                              className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => setDeletingItem(item)}
+                              className="p-1 text-gray-400 hover:text-red-600"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                            ${parseFloat(item.price).toFixed(2)}
+                          </div>
+                          <div className="flex items-center">
+                            <Star className="h-4 w-4 text-yellow-400 fill-current mr-1" />
+                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                              {parseFloat(item.rating).toFixed(1)}
+                            </span>
+                          </div>
+                        </div>
+                        {item.qty_available !== undefined && (
+                          <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                            Available: {item.qty_available}
+                          </div>
+                        )}
+                        {item.ready_time && (
+                          <div className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                            Ready in: {item.ready_time} min
+                          </div>
+                        )}
                       </div>
-                    </div>
-                    <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                      ${item.price}
                     </div>
                   </div>
                 ))}
@@ -245,7 +353,16 @@ const VendorDetails = () => {
         <FoodItemModal
           isOpen={showAddItemModal}
           onClose={() => setShowAddItemModal(false)}
-          onSave={(item) => addFoodItem(vendor.id, item)}
+          onSave={async (item) => {
+            const res = await addFoodItem(vendor.id, item);
+            if (res.success) {
+              fetchVendorDetails();
+              setShowAddItemModal(false);
+              showAlertMessage("Food item added successfully", "success");
+            } else {
+              showAlertMessage(res.error || "Failed to add food item", "error");
+            }
+          }}
           mode="add"
         />
       )}
@@ -255,9 +372,23 @@ const VendorDetails = () => {
         <FoodItemModal
           isOpen={!!editingItem}
           onClose={() => setEditingItem(null)}
-          onSave={(updates) =>
-            updateFoodItem(vendor.id, editingItem.id, updates)
-          }
+          onSave={async (updates) => {
+            const res = await updateFoodItem(
+              vendor.id,
+              editingItem.id,
+              updates
+            );
+            if (res.success) {
+              fetchVendorDetails();
+              setEditingItem(null);
+              showAlertMessage("Food item updated successfully", "success");
+            } else {
+              showAlertMessage(
+                res.error || "Failed to update food item",
+                "error"
+              );
+            }
+          }}
           mode="edit"
           item={editingItem}
         />
@@ -283,13 +414,25 @@ const VendorDetails = () => {
               </button>
               <button
                 onClick={() => handleDeleteItem(deletingItem)}
-                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors duration-200"
+                className="flex-1 px-4 py-2 flex justify-center items-center text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors duration-200"
               >
-                Delete
+                {isDeletingItem ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                ) : (
+                  "Delete"
+                )}
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {showAlert && (
+        <Alert
+          message={alertMessage}
+          variant={alertVariant}
+          onClose={() => setShowAlert(false)}
+        />
       )}
     </>
   );

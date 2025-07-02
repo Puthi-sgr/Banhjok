@@ -50,34 +50,13 @@ npm run dev
 
 The application will be available at `http://localhost:5173`
 
-### 5. Building for Production
-
-To create a production build:
-
-```bash
-npm run build
-```
-
-To preview the production build:
-
-```bash
-npm run preview
-```
-
-### 6. Linting
+### 5. Linting
 
 To run the linter:
 
 ```bash
 npm run lint
 ```
-
-## Available Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
 
 ## Tech Stack
 
@@ -86,10 +65,11 @@ npm run lint
 - TailwindCSS
 - React Router DOM
 - Motion (for animations)
+- Lucide UI
+- Shadcn
 
 ## Contributing
 
 1. Create a new branch for your feature
 2. Make your changes
 3. Submit a pull request
-

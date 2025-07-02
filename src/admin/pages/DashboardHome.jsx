@@ -5,13 +5,16 @@ import {
   DollarSign,
   TrendingUp,
   TrendingDown,
+  Loader2,
 } from "lucide-react";
 import { useData } from "../../contexts/DataContext";
 import StatsCard from "../components/StatsCard";
 import DataTable from "../components/DataTable";
+import OrderTable from "../components/OrderTable";
+import { Link } from "react-router-dom";
 
 const DashboardHome = () => {
-  const { stats, orders, vendors } = useData();
+  const { stats, orders, vendors, loading } = useData();
 
   const statsCards = [
     {
@@ -48,43 +51,23 @@ const DashboardHome = () => {
     },
   ];
 
-  const recentOrdersColumns = [
-    { key: "id", label: "Order ID" },
-    { key: "customerName", label: "Customer" },
-    { key: "vendorName", label: "Vendor" },
+  const topVendorsColumns = [
     {
-      key: "amount",
-      label: "Amount",
-      render: (value) => `$${value.toFixed(2)}`,
-    },
-    {
-      key: "status",
-      label: "Status",
-      render: (value) => (
-        <span
-          className={`px-2 py-1 rounded-full text-xs font-medium ${
-            value === "delivered"
-              ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
-              : value === "preparing"
-              ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
-              : value === "out-for-delivery"
-              ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
-              : "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300"
-          }`}
-        >
-          {value.replace("-", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-        </span>
+      key: "name",
+      label: "Name",
+      render: (value, vendor) => (
+        <div className="flex flex-col">
+          <span className="font-medium text-gray-900 dark:text-white">
+            {value}
+          </span>
+          {vendor.email && (
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              {vendor.email}
+            </span>
+          )}
+        </div>
       ),
     },
-    {
-      key: "date",
-      label: "Date",
-      render: (value) => new Date(value).toLocaleDateString(),
-    },
-  ];
-
-  const topVendorsColumns = [
-    { key: "name", label: "Name" },
     { key: "orders", label: "Orders" },
     {
       key: "revenue",
@@ -101,13 +84,57 @@ const DashboardHome = () => {
         </div>
       ),
     },
+    {
+      key: "foodTypes",
+      label: "Food Types",
+      render: (value) => (
+        <div className="flex flex-wrap gap-1">
+          {value && value.length > 0 ? (
+            value.slice(0, 2).map((type, index) => (
+              <span
+                key={index}
+                className="px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 text-xs rounded-full"
+              >
+                {type}
+              </span>
+            ))
+          ) : (
+            <span className="text-gray-500 text-xs">No types</span>
+          )}
+          {value && value.length > 2 && (
+            <span className="text-gray-500 text-xs">
+              +{value.length - 2} more
+            </span>
+          )}
+        </div>
+      ),
+    },
   ];
 
-  const topVendors = vendors.sort((a, b) => b.revenue - a.revenue).slice(0, 5);
+  const topVendors =
+    vendors && vendors.length > 0
+      ? vendors.sort((a, b) => b.revenue - a.revenue).slice(0, 6)
+      : [];
 
-  const recentOrders = orders
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .slice(0, 10);
+  const recentOrders =
+    orders && orders.length > 0
+      ? orders
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+          .slice(0, 6)
+      : [];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="flex items-center space-x-2">
+          <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
+          <span className="text-gray-600 dark:text-gray-400 text-lg">
+            Loading dashboard data...
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -139,9 +166,10 @@ const DashboardHome = () => {
               Latest orders from your platform
             </p>
           </div>
-          <DataTable
-            columns={recentOrdersColumns}
-            data={recentOrders}
+          <OrderTable
+            orders={recentOrders}
+            loading={loading}
+            showActions={false}
             className="border-0"
           />
         </div>
@@ -159,6 +187,7 @@ const DashboardHome = () => {
             columns={topVendorsColumns}
             data={topVendors}
             className="border-0"
+            loading={loading}
           />
         </div>
       </div>
@@ -169,7 +198,10 @@ const DashboardHome = () => {
           Quick Actions
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 text-left">
+          <Link
+            to="/dashboard/vendors"
+            className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 text-left"
+          >
             <div className="flex items-center space-x-3">
               <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded-lg">
                 <Store className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -183,9 +215,12 @@ const DashboardHome = () => {
                 </p>
               </div>
             </div>
-          </button>
+          </Link>
 
-          <button className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 text-left">
+          <Link
+            to="/dashboard/orders"
+            className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 text-left"
+          >
             <div className="flex items-center space-x-3">
               <div className="bg-green-100 dark:bg-green-900 p-2 rounded-lg">
                 <ShoppingCart className="h-5 w-5 text-green-600 dark:text-green-400" />
@@ -199,23 +234,26 @@ const DashboardHome = () => {
                 </p>
               </div>
             </div>
-          </button>
+          </Link>
 
-          <button className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 text-left">
+          <Link
+            to="/dashboard/customers"
+            className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 text-left"
+          >
             <div className="flex items-center space-x-3">
               <div className="bg-purple-100 dark:bg-purple-900 p-2 rounded-lg">
-                <TrendingUp className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                <Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
                 <h3 className="font-medium text-gray-900 dark:text-white">
-                  View Analytics
+                  Manage Customers
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Check performance metrics
+                  View and manage customer accounts
                 </p>
               </div>
             </div>
-          </button>
+          </Link>
         </div>
       </div>
     </div>
