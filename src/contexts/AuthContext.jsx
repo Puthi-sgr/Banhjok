@@ -14,124 +14,153 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem("jwt_token") || null);
   const [isLoading, setIsLoading] = useState(true);
+  const [authError, setAuthError] = useState(null);
   const navigate = useNavigate();
 
   const hasFetchedUser = useRef(false);
+
+  // Centralized user fetcher
+  const fetchUser = async (
+    tokenForFetching,
+    roleHint = null // "admin" | "customer" | null
+  ) => {
+    const api = import.meta.env.VITE_API_URL;
+    const paths = {
+      admin: "/api/admin/user",
+      customer: "/api/v1/auth/profile",
+    };
+    const tryPaths = roleHint
+      ? [paths[roleHint]]
+      : [paths.admin, paths.customer];
+
+    for (const path of tryPaths) {
+      const response = await fetch(`${api}${path}`, {
+        method: "GET",
+        headers: {
+          "ngrok-skip-browser-warning": "true",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${tokenForFetching}`,
+        },
+      });
+
+      if (response.status === 401) throw new Error("unauthorized");
+      if (!response.ok) continue;
+
+      const { data } = await response.json();
+      return path.includes("/admin/")
+        ? { ...data, role: "admin", id: data.admin_id ?? data.id }
+        : { ...data, role: "customer", id: data.user_id ?? data.id };
+    }
+    throw new Error("Failed to fetch profile");
+  };
 
   useEffect(() => {
     if (!token || hasFetchedUser.current) return;
 
     hasFetchedUser.current = true;
-    getUser();
+
+    // Check if we have user data in localStorage to determine role
+    const existingUser = localStorage.getItem("user");
+    if (existingUser) {
+      try {
+        const userData = JSON.parse(existingUser);
+        if (userData.role === "customer") {
+          getCustomer();
+        } else if (userData.role === "admin") {
+          getUser();
+        } else {
+          getCustomer();
+        }
+      } catch (error) {
+        console.error("Error parsing user data from localStorage:", error);
+        localStorage.removeItem("user");
+        getCustomer();
+      }
+    } else {
+      getCustomer();
+    }
   }, [token]);
 
-  const getUser = async () => {
+  // Refactored getUser
+  const getUser = async (triedAdmin = false) => {
     setIsLoading(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL;
-      if (!apiUrl) {
-        console.warn("VITE_API_URL not found in environment variables");
-        setIsLoading(false);
-        return;
-      }
-
-      const response = await fetch(`${apiUrl}/api/admin/user`, {
-        method: "GET",
-        headers: {
-          "ngrok-skip-browser-warning": "true",
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.status === 401) {
-        logout();
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        const textResponse = await response.text();
-        console.error("Non-JSON response received:", textResponse);
-
-        // Check for database connection errors
-        if (
-          textResponse.includes("too many clients already") ||
-          textResponse.includes("DB connection failed")
-        ) {
-          throw new Error("Database connection limit reached");
-        }
-
-        throw new Error("Server returned non-JSON response");
-      }
-
-      const data = await response.json();
-      const userData = data.data || data;
-
-      const userWithRole = {
-        ...userData,
-        role: "admin",
-      };
-
-      setUser(userWithRole);
-      localStorage.setItem("user", JSON.stringify(userWithRole));
+      if (!token) throw new Error("No token");
+      const userData = await fetchUser(token, "admin");
+      setUser(userData);
+      localStorage.setItem("user", JSON.stringify(userData));
+      setAuthError(null);
     } catch (error) {
-      console.error("Error fetching user data:", error.message);
-      setUser(null);
+      console.error("Error fetching admin user:", error.message);
+      if (!triedAdmin) {
+        await getCustomer(true);
+      } else {
+        setUser(null);
+        setAuthError(
+          "Failed to get admin profile. Please check your connection."
+        );
+        logout();
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (token) {
-      getUser();
-    } else {
-      // Check if there's existing user data in localStorage
-      const existingUser = localStorage.getItem("user");
-      if (existingUser) {
-        try {
-          const userData = JSON.parse(existingUser);
-          setUser(userData);
-        } catch (error) {
-          console.error("Error parsing user data from localStorage:", error);
-          localStorage.removeItem("user");
-        }
+  // Refactored getCustomer
+  const getCustomer = async (triedCustomer = false) => {
+    setIsLoading(true);
+    try {
+      if (!token) throw new Error("No token");
+      const customerData = await fetchUser(token, "customer");
+      setUser(customerData);
+      localStorage.setItem("user", JSON.stringify(customerData));
+      setAuthError(null);
+    } catch (error) {
+      console.error("Error fetching customer:", error.message);
+      if (!triedCustomer) {
+        await getUser(true);
+      } else {
+        setUser(null);
+        setAuthError(
+          "Failed to get customer profile. Please check your connection."
+        );
+        logout();
       }
+    } finally {
       setIsLoading(false);
     }
-  }, [token]);
-
-  const saveToken = (token) => {
-    setToken(token);
-    localStorage.setItem("jwt_token", token);
   };
 
+  // Login flows use fetchUser
   const loginCustomer = async (email, password) => {
-    // Simulate API call to customer login endpoint
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        // Demo customer credentials
-        if (email === "customer@food.com" && password === "customer123") {
-          const userData = {
-            id: 1,
-            name: "John Customer",
-            email: "customer@food.com",
-            role: "customer",
-            avatar: null,
-          };
-          setUser(userData);
-          localStorage.setItem("user", JSON.stringify(userData));
-          resolve(userData);
-        } else {
-          reject(new Error("Invalid customer credentials"));
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/auth/login`,
+        {
+          method: "POST",
+          headers: {
+            "ngrok-skip-browser-warning": "true",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email, password }),
         }
-      }, 1000);
-    });
+      );
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Invalid customer credentials");
+      }
+      const data = await response.json();
+      const responseData = data.data || data;
+      if (responseData.token) {
+        saveToken(responseData.token);
+        const customerData = await fetchUser(responseData.token, "customer");
+        setUser(customerData);
+        localStorage.setItem("user", JSON.stringify(customerData));
+      }
+    } catch (error) {
+      console.error("Login failed:", error.message);
+      throw new Error(error.message || "Failed to login as customer");
+    }
   };
 
   const loginVendor = async (email, password) => {
@@ -172,50 +201,19 @@ export const AuthProvider = ({ children }) => {
           body: JSON.stringify({ email, password }),
         }
       );
-
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || "Invalid admin credentials");
       }
-
-      // Check if response is JSON
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        const textResponse = await response.text();
-        console.error("Non-JSON response received:", textResponse);
-
-        // Check for database connection errors
-        if (
-          textResponse.includes("too many clients already") ||
-          textResponse.includes("DB connection failed")
-        ) {
-          throw new Error("Database connection limit reached");
-        }
-
-        throw new Error("Server returned non-JSON response");
-      }
-
       const data = await response.json();
-
       const responseData = data.data || data;
-
       if (responseData.token) {
         saveToken(responseData.token);
-
-        // Create user object with admin role
-        const userData = {
-          id: responseData.admin_id,
-          email: email,
-          role: "admin",
-          admin_id: responseData.admin_id,
-        };
-
-        setUser(userData);
-        localStorage.setItem("user", JSON.stringify(userData));
-
-        return userData;
+        const adminData = await fetchUser(responseData.token, "admin");
+        setUser(adminData);
+        localStorage.setItem("user", JSON.stringify(adminData));
+        return adminData;
       }
-
       throw new Error("No token received from server");
     } catch (error) {
       console.error("Login failed:", error.message);
@@ -224,27 +222,39 @@ export const AuthProvider = ({ children }) => {
   };
 
   const registerCustomer = async (name, email, password) => {
-    // Simulate API call to customer registration endpoint
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        // Check if email already exists (demo validation)
-        if (email === "customer@food.com") {
-          reject(new Error("Email already exists"));
-          return;
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/v1/auth/register`,
+        {
+          method: "POST",
+          headers: {
+            "ngrok-skip-browser-warning": "true",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ name, email, password }),
         }
+      );
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Invalid customer credentials");
+      }
+      const data = await response.json();
+      const responseData = data.data || data;
+      if (responseData.token) {
+        saveToken(responseData.token);
+        const customerData = await fetchUser(responseData.token, "customer");
+        setUser(customerData);
+        localStorage.setItem("user", JSON.stringify(customerData));
+      }
+    } catch (error) {
+      console.error("Register failed:", error.message);
+      throw new Error(error.message || "Failed to register as customer");
+    }
+  };
 
-        const userData = {
-          id: Date.now(),
-          name,
-          email,
-          role: "customer",
-          avatar: null,
-        };
-        setUser(userData);
-        localStorage.setItem("user", JSON.stringify(userData));
-        resolve(userData);
-      }, 1000);
-    });
+  const saveToken = (token) => {
+    setToken(token);
+    localStorage.setItem("jwt_token", token);
   };
 
   const logout = () => {
@@ -264,6 +274,9 @@ export const AuthProvider = ({ children }) => {
     logout,
     isLoading,
     token,
+    getCustomer,
+    getUser,
+    authError,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

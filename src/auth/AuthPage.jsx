@@ -23,9 +23,11 @@ const AuthPage = () => {
   const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
     name: '',
-    email: 'systemAdmin@example.com',
-    password: 'AdminPassword123'
+    email: '',
+    password: ''
   });
+  // email: 'systemAdmin@example.com',
+  //   password: 'AdminPassword123'
 
   // Redirect if already logged in
   if (user) {
@@ -45,16 +47,16 @@ const AuthPage = () => {
       borderColor: 'border-green-500',
       textColor: 'text-green-600'
     },
-    {
-      id: 'vendor',
-      name: 'Vendor',
-      icon: Store,
-      description: 'Manage your restaurant',
-      color: 'bg-purple-600',
-      hoverColor: 'hover:bg-purple-700',
-      borderColor: 'border-purple-500',
-      textColor: 'text-purple-600'
-    },
+    // {
+    //   id: 'vendor',
+    //   name: 'Vendor',
+    //   icon: Store,
+    //   description: 'Manage your restaurant',
+    //   color: 'bg-purple-600',
+    //   hoverColor: 'hover:bg-purple-700',
+    //   borderColor: 'border-purple-500',
+    //   textColor: 'text-purple-600'
+    // },
     {
       id: 'admin',
       name: 'Admin',
@@ -155,20 +157,6 @@ const AuthPage = () => {
       setFormData({ name: '', email: '', password: '' });
     }
   };
-
-  const getDemoCredentials = () => {
-    switch (userType) {
-      case 'customer':
-        return { email: 'customer@food.com', password: 'customer123' };
-      case 'vendor':
-        return { email: 'vendor@restaurant.com', password: 'vendor123' };
-      case 'admin':
-        return { email: 'admin@delivery.com', password: 'admin123' };
-      default:
-        return { email: '', password: '' };
-    }
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-4 py-12">
       <div className="max-w-md w-full space-y-8">
@@ -229,7 +217,7 @@ const AuthPage = () => {
                   Full Name
                 </label>
                 <div className="mt-1 relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-50">
                     <User className="h-5 w-5 text-gray-400" />
                   </div>
                   <input
@@ -253,7 +241,7 @@ const AuthPage = () => {
                 Email Address
               </label>
               <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-50">
                   <Mail className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
@@ -276,7 +264,7 @@ const AuthPage = () => {
                 Password
               </label>
               <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-50">
                   <Lock className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
@@ -341,17 +329,6 @@ const AuthPage = () => {
               </div>
             )}
           </form>
-
-          {/* Demo Credentials */}
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm font-medium text-gray-700 mb-2">
-              Demo Credentials for {currentUserType.name}:
-            </p>
-            <div className="text-sm text-gray-600 space-y-1">
-              <p><strong>Email:</strong> {getDemoCredentials().email}</p>
-              <p><strong>Password:</strong> {getDemoCredentials().password}</p>
-            </div>
-          </div>
         </div>
       </div>
     </div>

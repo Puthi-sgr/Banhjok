@@ -7,11 +7,20 @@ import OrderManagement from "../admin/pages/OrderManagement";
 import AdminProfile from "../admin/pages/AdminProfile";
 import AuthPage from "../auth/AuthPage";
 import ProtectedRoute from "./ProtectedRoute";
-import Home from "../clients/pages/Home";
 import VendorDashboard from "../vendor/pages/VendorDashboard";
 import OrderDetail from "../admin/pages/OrderDetail";
 import CustomerManagement from "../admin/pages/CustomerManagement";
 import CustomerProfile from "../admin/pages/CustomerProfile";
+import { Landing } from "../clients/pages/Landing";
+import { Explore } from "../clients/pages/Explore";
+import { VendorDetail } from "../clients/pages/VendorDetail";
+import { FoodDetail } from "../clients/pages/FoodDetail";
+import { Cart } from "../clients/pages/Cart";
+import { CheckoutConfirm } from "../clients/pages/CheckoutConfirm";
+import { PaymentPage } from "../clients/pages/PaymentPage";
+import { OrderSuccess } from "../clients/pages/OrderSuccess";
+import CustomerProfilePage from "../clients/pages/CustomerProfile";
+import { Navbar } from "../clients/components/Navbar";
 
 const AppRouter = () => {
   return (
@@ -20,11 +29,61 @@ const AppRouter = () => {
         {/* Authentication Routes */}
         <Route path="/auth" element={<AuthPage />} />
 
-        {/* Admin Routes */}
+        {/* Client Routes - Public access for most routes */}
+        <Route path="/" element={<Navbar />}>
+          <Route index element={<Landing />} />
+          <Route path="explore" element={<Explore />} />
+          <Route path="vendor/:vendorId" element={<VendorDetail />} />
+          <Route path="food/:foodId" element={<FoodDetail />} />
+
+          {/* Customer-specific routes - require customer authentication */}
+          <Route
+            path="cart"
+            element={
+              <ProtectedRoute allowedRoles={["customer"]}>
+                <Cart />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="checkout/confirm"
+            element={
+              <ProtectedRoute allowedRoles={["customer"]}>
+                <CheckoutConfirm />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="payment"
+            element={
+              <ProtectedRoute allowedRoles={["customer"]}>
+                <PaymentPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="order/success"
+            element={
+              <ProtectedRoute allowedRoles={["customer"]}>
+                <OrderSuccess />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="profile"
+            element={
+              <ProtectedRoute allowedRoles={["customer"]}>
+                <CustomerProfilePage />
+              </ProtectedRoute>
+            }
+          />
+        </Route>
+
+        {/* Admin Routes - Protected for admin only */}
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={["admin"]}>
               <Dashboard />
             </ProtectedRoute>
           }
@@ -38,19 +97,8 @@ const AppRouter = () => {
           <Route path="customers" element={<CustomerManagement />} />
           <Route path="customers/:id" element={<CustomerProfile />} />
         </Route>
-        <Route path="*" element={<Navigate to="/auth" replace />} />
 
-        {/* Client Routes */}
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute allowedRoles={["customer"]}>
-              <Home />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Vendor Routes */}
+        {/* Vendor Routes - Protected for vendor only */}
         <Route
           path="/vendor"
           element={
@@ -59,6 +107,9 @@ const AppRouter = () => {
             </ProtectedRoute>
           }
         />
+
+        {/* Catch-all route - redirect to auth if not authenticated, otherwise to appropriate dashboard */}
+        <Route path="*" element={<Navigate to="/auth" replace />} />
       </Routes>
     </>
   );

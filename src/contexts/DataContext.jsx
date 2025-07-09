@@ -32,7 +32,7 @@ export const DataProvider = ({ children }) => {
   const [customers, setCustomers] = useState(initialState.customers);
   const [stats, setStats] = useState(initialState.stats);
   const [loading, setLoading] = useState(initialState.loading);
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   // Fetch with auth
   const fetchWithAuth = async (url, options = {}) => {
@@ -136,8 +136,8 @@ export const DataProvider = ({ children }) => {
           rating: vendor.rating,
           image: vendor.image,
           // Add mock data for display purposes
-          orders: Math.floor(Math.random() * 100) + 10,
-          revenue: parseFloat((Math.random() * 5000 + 1000).toFixed(2)),
+          orders: vendor.totalOrders,
+          revenue: vendor.revenue,
           status: "active",
         }));
 
@@ -593,12 +593,16 @@ export const DataProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    if (token) {
+    // Only fetch admin data if user is authenticated and is an admin
+    if (token && user && user.role === "admin") {
       getStats();
       getVendors();
       getOrders();
+    } else if (token && user) {
+      // For non-admin users, just set loading to false
+      setLoading(false);
     }
-  }, [token]);
+  }, [token, user]);
 
   const value = {
     vendors,

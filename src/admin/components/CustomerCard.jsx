@@ -18,21 +18,21 @@ const CustomerCard = ({ customer, onAlert, onDelete, onEdit }) => {
         </h3>
         <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 mb-1">
           <Mail className="h-4 w-4 mr-2" />
-          <span className="truncate">{customer.email}</span>
+          <span className="truncate">{customer.email || "N/A"}</span>
         </div>
         <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 mb-1">
           <Phone className="h-4 w-4 mr-2" />
-          <span>{customer.phone}</span>
+          <span>{customer.phone || "N/A"}</span>
         </div>
         <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 mb-1">
           <MapPin className="h-4 w-4 mr-2" />
-          <span className="truncate">{customer.address}</span>
+          <span className="truncate">{customer.address || "N/A"}</span>
         </div>
         <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-          Location: {customer.location}
+          Location: {customer.location || "N/A"}
         </div>
         <div className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          Joined: {new Date(customer.created_at).toLocaleDateString()}
+          Joined: {new Date(customer.created_at).toLocaleDateString() || "N/A"}
         </div>
         <div className="flex">
           <Link
