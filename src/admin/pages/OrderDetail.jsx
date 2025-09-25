@@ -360,12 +360,7 @@ const OrderDetail = () => {
                   Subtotal
                 </span>
                 <span className="font-medium text-gray-900 dark:text-white">
-                  $
-                  {(
-                    parseFloat(order.total_amount) -
-                    2.99 -
-                    parseFloat(order.total_amount) * 0.08
-                  ).toFixed(2)}
+                  ${parseFloat(order.total_amount || 0).toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
@@ -373,13 +368,13 @@ const OrderDetail = () => {
                   Delivery Fee
                 </span>
                 <span className="font-medium text-gray-900 dark:text-white">
-                  $2.99
+                  $0.00
                 </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600 dark:text-gray-400">Tax</span>
                 <span className="font-medium text-gray-900 dark:text-white">
-                  ${(parseFloat(order.total_amount) * 0.08).toFixed(2)}
+                  $0.00
                 </span>
               </div>
               <div className="flex justify-between text-lg font-semibold border-t border-gray-200 dark:border-gray-700 pt-2">

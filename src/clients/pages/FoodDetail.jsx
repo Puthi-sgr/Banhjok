@@ -9,6 +9,7 @@ import {
   Heart,
   Share2,
   ShoppingCart,
+  Package,
 } from "lucide-react";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { useCart } from "../contexts/CartContext";
@@ -16,6 +17,7 @@ import { useFood } from "../contexts/FoodContext";
 import { FoodCard } from "../components/FoodCard";
 import { useVendor } from "../contexts/VendorContext";
 import { useAuth } from "../../contexts/AuthContext";
+import { getFoodStock } from "../utils/food";
 
 export const FoodDetail = () => {
   const { foodId } = useParams();
@@ -25,6 +27,8 @@ export const FoodDetail = () => {
   const { addItem, state } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const stockCount = getFoodStock(food);
+  const isOutOfStock = stockCount === 0;
 
   useEffect(() => {
     if (foodId) {
@@ -141,6 +145,15 @@ export const FoodDetail = () => {
               <div className="flex items-center space-x-1">
                 <Clock className="w-5 h-5 text-gray-600" />
                 <span className="text-gray-700">{food.ready_time} min</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Package
+                  className={`w-5 h-5 ${isOutOfStock ? "text-red-500" : "text-green-500"}`}
+                />
+                <span className="text-gray-700">
+                  Stock: <span className="font-semibold">{stockCount}</span>
+                  {isOutOfStock && " (Out of stock)"}
+                </span>
               </div>
             </div>
 

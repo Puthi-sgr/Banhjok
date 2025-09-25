@@ -1,14 +1,17 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Star, Clock, Plus, MapPinIcon } from "lucide-react";
+import { Star, Clock, Plus, Package } from "lucide-react";
 import { useCart } from "../contexts/CartContext";
 import { useAuth } from "../../contexts/AuthContext";
 import noProfile from "../../assets/images/no-profile.png";
+import { getFoodStock } from "../utils/food";
 
 export const FoodCard = ({ food, showVendor = true, viewMode = "grid" }) => {
   const { addItem } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const stockCount = getFoodStock(food);
+  const isOutOfStock = stockCount === 0;
 
   const handleAddToCart = (e) => {
     e.preventDefault();
@@ -86,6 +89,16 @@ export const FoodCard = ({ food, showVendor = true, viewMode = "grid" }) => {
                       {food.ready_time} min
                     </span>
                   </div>
+                  <div className="flex items-center space-x-1">
+                    <Package
+                      className={`w-4 h-4 ${
+                        isOutOfStock ? "text-red-500" : "text-green-500"
+                      }`}
+                    />
+                    <span className="text-sm text-gray-600">
+                      {isOutOfStock ? "Out of stock" : `${stockCount} in stock`}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -160,6 +173,12 @@ export const FoodCard = ({ food, showVendor = true, viewMode = "grid" }) => {
                 <Clock className="w-4 h-4 text-gray-400" />
                 <span className="text-sm text-gray-600">
                   {food.ready_time} min
+                </span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <Package className={`w-4 h-4 ${isOutOfStock ? "text-red-500" : "text-green-500"}`} />
+                <span className="text-sm text-gray-600">
+                  {isOutOfStock ? "Out of stock" : `${stockCount} in stock`}
                 </span>
               </div>
             </div>

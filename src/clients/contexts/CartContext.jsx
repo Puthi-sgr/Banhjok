@@ -170,11 +170,11 @@ export const CartProvider = ({ children }) => {
   };
 
   const getDeliveryFee = () => {
-    return getTotalPrice() > 25 ? 0 : 2.99;
+    return 0;
   };
 
   const getTax = () => {
-    return getTotalPrice() * 0.08;
+    return 0;
   };
 
   return (

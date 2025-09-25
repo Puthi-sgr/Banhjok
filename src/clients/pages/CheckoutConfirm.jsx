@@ -1,8 +1,15 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, CreditCard, CheckCircle, AlertCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  CreditCard,
+  CheckCircle,
+  AlertCircle,
+  Package,
+} from "lucide-react";
 import { useCart } from "../contexts/CartContext";
 import { useAuth } from "../../contexts/AuthContext";
+import { getFoodStock } from "../utils/food";
 
 export const CheckoutConfirm = () => {
   const { state, clearCart, getTotalPrice, getDeliveryFee, getTax } = useCart();
@@ -133,8 +140,12 @@ export const CheckoutConfirm = () => {
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h2 className="text-xl font-semibold mb-4">Order Items</h2>
               <div className="space-y-4">
-                {state.items.map((item) => (
-                  <div key={item.id} className="flex items-center">
+                {state.items.map((item) => {
+                  const stockCount = getFoodStock(item);
+                  const outOfStock = stockCount === 0;
+
+                  return (
+                    <div key={item.id} className="flex items-center">
                     <img
                       src={item.image}
                       alt={item.name}
@@ -148,14 +159,23 @@ export const CheckoutConfirm = () => {
                       <p className="text-orange-600 font-bold">
                         ${item.price} × {item.quantity}
                       </p>
+                      <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
+                        <Package
+                          className={`w-4 h-4 ${outOfStock ? "text-red-500" : "text-green-500"}`}
+                        />
+                        <span>
+                          {outOfStock ? "Out of stock" : `${stockCount} in stock`}
+                        </span>
+                      </div>
                     </div>
                     <div className="text-right">
                       <p className="font-semibold text-gray-900">
                         ${(item.price * item.quantity).toFixed(2)}
                       </p>
                     </div>
-                  </div>
-                ))}
+                    </div>
+                  );
+                })}
               </div>
             </div>
 

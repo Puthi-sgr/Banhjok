@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Minus, Plus, Trash2, ShoppingCart, CreditCard } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingCart, CreditCard, Package } from "lucide-react";
 import { useCart } from "../contexts/CartContext";
+import { getFoodStock } from "../utils/food";
 
 export const Cart = () => {
   const {
@@ -68,11 +69,15 @@ export const Cart = () => {
           {/* Cart Items */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow-sm">
-              {state.items.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center p-6 border-b last:border-b-0"
-                >
+              {state.items.map((item) => {
+                const stockCount = getFoodStock(item);
+                const outOfStock = stockCount === 0;
+
+                return (
+                  <div
+                    key={item.id}
+                    className="flex items-center p-6 border-b last:border-b-0"
+                  >
                   <img
                     src={item.image}
                     alt={item.name}
@@ -84,6 +89,12 @@ export const Cart = () => {
                     </h3>
                     <p className="text-gray-600 text-sm">{item.vendorName}</p>
                     <p className="text-orange-600 font-bold">${item.price}</p>
+                    <div className="flex items-center gap-2 mt-2 text-sm text-gray-600">
+                      <Package
+                        className={`w-4 h-4 ${outOfStock ? "text-red-500" : "text-green-500"}`}
+                      />
+                      <span>{outOfStock ? "Out of stock" : `${stockCount} in stock`}</span>
+                    </div>
                   </div>
                   <div className="flex items-center space-x-3">
                     <button
@@ -108,8 +119,9 @@ export const Cart = () => {
                   >
                     <Trash2 className="w-5 h-5" />
                   </button>
-                </div>
-              ))}
+                  </div>
+                );
+              })}
             </div>
           </div>
 
