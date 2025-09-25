@@ -72,6 +72,8 @@ export const Cart = () => {
               {state.items.map((item) => {
                 const stockCount = getFoodStock(item);
                 const outOfStock = stockCount === 0;
+                const canDecrease = item.quantity > 1;
+                const canIncrease = !outOfStock && item.quantity < stockCount;
 
                 return (
                   <div
@@ -99,7 +101,11 @@ export const Cart = () => {
                   <div className="flex items-center space-x-3">
                     <button
                       onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                      className="bg-gray-200 hover:bg-gray-300 text-gray-700 p-1 rounded-full"
+                      disabled={!canDecrease}
+                      aria-disabled={!canDecrease}
+                      className={`bg-gray-200 text-gray-700 p-1 rounded-full transition-colors ${
+                        canDecrease ? "hover:bg-gray-300" : "cursor-not-allowed opacity-60"
+                      }`}
                     >
                       <Minus className="w-4 h-4" />
                     </button>
@@ -108,7 +114,11 @@ export const Cart = () => {
                     </span>
                     <button
                       onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                      className="bg-gray-200 hover:bg-gray-300 text-gray-700 p-1 rounded-full"
+                      disabled={!canIncrease}
+                      aria-disabled={!canIncrease}
+                      className={`bg-gray-200 text-gray-700 p-1 rounded-full transition-colors ${
+                        canIncrease ? "hover:bg-gray-300" : "cursor-not-allowed opacity-60"
+                      }`}
                     >
                       <Plus className="w-4 h-4" />
                     </button>

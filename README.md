@@ -68,6 +68,17 @@ npm run lint
 - Lucide UI
 - Shadcn
 
+## Deployment (GitHub Pages)
+
+The project is configured for deployment to the `Puthi-sgr/Banhjok` GitHub Pages site. The Vite base path automatically switches when the `DEPLOY_TARGET=GH_PAGES` flag is provided.
+
+```bash
+# build with the correct base path and publish the dist/ folder to gh-pages
+npm run deploy
+```
+
+The command will create/update the `gh-pages` branch using [gh-pages](https://www.npmjs.com/package/gh-pages). Ensure you have push permissions to the repository and that the site is configured to serve from the `gh-pages` branch in the project settings.
+
 ## Contributing
 
 1. Create a new branch for your feature

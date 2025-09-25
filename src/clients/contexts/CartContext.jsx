@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
+import { getFoodStock } from "../utils/food";
 
 const CartContext = createContext(undefined);
 
@@ -10,7 +11,20 @@ const cartReducer = (state, action) => {
         (item) =>
           item.id === action.payload.id && item.userId === action.payload.userId
       );
+
+      const stockLimit = existingItem
+        ? getFoodStock(existingItem)
+        : getFoodStock(action.payload);
+
+      if (stockLimit <= 0) {
+        return state;
+      }
+
       if (existingItem) {
+        if (existingItem.quantity >= stockLimit) {
+          return state;
+        }
+
         return {
           ...state,
           items: state.items.map((item) =>
@@ -21,6 +35,7 @@ const cartReducer = (state, action) => {
           ),
         };
       }
+
       return {
         ...state,
         items: [...state.items, { ...action.payload, quantity: 1 }],
@@ -37,18 +52,38 @@ const cartReducer = (state, action) => {
             )
         ),
       };
-    case "UPDATE_QUANTITY":
+    case "UPDATE_QUANTITY": {
       return {
         ...state,
         items: state.items
-          .map((item) =>
-            item.id === action.payload.id &&
-            item.userId === action.payload.userId
-              ? { ...item, quantity: action.payload.quantity }
-              : item
-          )
-          .filter((item) => item.quantity > 0),
+          .map((item) => {
+            if (
+              item.id === action.payload.id &&
+              item.userId === action.payload.userId
+            ) {
+              const stockLimit = getFoodStock(item);
+
+              if (stockLimit <= 0) {
+                return null;
+              }
+
+              const normalizedQuantity = Math.min(
+                Math.max(action.payload.quantity, 0),
+                stockLimit
+              );
+
+              if (normalizedQuantity <= 0) {
+                return null;
+              }
+
+              return { ...item, quantity: normalizedQuantity };
+            }
+
+            return item;
+          })
+          .filter(Boolean),
       };
+    }
     case "CLEAR_CART":
       return {
         items: [],
@@ -132,6 +167,22 @@ export const CartProvider = ({ children }) => {
       console.error("User must be authenticated to add items to cart");
       return;
     }
+
+    const stockCount = getFoodStock(food);
+    if (stockCount <= 0) {
+      console.warn("Cannot add out-of-stock item to cart");
+      return;
+    }
+
+    const existingItem = state.items.find(
+      (item) => item.id === food.id && item.userId === user.id
+    );
+
+    if (existingItem && existingItem.quantity >= stockCount) {
+      console.warn("Cannot add more than available stock");
+      return;
+    }
+
     dispatch({ type: "ADD_ITEM", payload: { ...food, userId: user.id } });
   };
 
@@ -148,9 +199,27 @@ export const CartProvider = ({ children }) => {
       console.error("User must be authenticated to update cart");
       return;
     }
+
+    const cartItem = state.items.find(
+      (item) => item.id === id && item.userId === user.id
+    );
+
+    if (!cartItem) {
+      return;
+    }
+
+    const stockCount = getFoodStock(cartItem);
+    let normalizedQuantity = Math.max(0, quantity);
+
+    if (stockCount <= 0) {
+      normalizedQuantity = 0;
+    } else {
+      normalizedQuantity = Math.min(normalizedQuantity, stockCount);
+    }
+
     dispatch({
       type: "UPDATE_QUANTITY",
-      payload: { id, quantity, userId: user.id },
+      payload: { id, quantity: normalizedQuantity, userId: user.id },
     });
   };
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { loadStripe } from "@stripe/stripe-js";
 import {
@@ -26,12 +26,14 @@ function PaymentForm({
   onSuccess,
   onError,
   setupIntentClientSecret,
+  totalAmount,
 }) {
   const stripe = useStripe();
   const elements = useElements();
   const { token } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
   const [message, setMessage] = useState("");
+  const payableAmount = Number.isFinite(totalAmount) ? totalAmount : 0;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -173,7 +175,7 @@ function PaymentForm({
         ) : (
           <>
             <CreditCard className="w-5 h-5" />
-            <span>Pay ${parseInt(orderData.total_amount).toFixed(2)}</span>
+            <span>Pay ${payableAmount.toFixed(2)}</span>
           </>
         )}
       </button>
@@ -192,6 +194,27 @@ export const PaymentPage = () => {
   const [error, setError] = useState("");
   const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState(null);
   const [paymentMode, setPaymentMode] = useState("saved"); // 'saved' or 'new'
+
+  const totalAmount = useMemo(() => {
+    const parseAmount = (amount) => {
+      if (amount === null || amount === undefined) {
+        return null;
+      }
+
+      const numericAmount =
+        typeof amount === "number" ? amount : parseFloat(amount);
+
+      return Number.isNaN(numericAmount) ? null : numericAmount;
+    };
+
+    return (
+      parseAmount(orderData?.total) ??
+      parseAmount(orderData?.total_amount) ??
+      0
+    );
+  }, [orderData]);
+
+  const displayTotalAmount = Number.isFinite(totalAmount) ? totalAmount : 0;
 
   useEffect(() => {
     // Get order data from location state
@@ -307,7 +330,7 @@ export const PaymentPage = () => {
     // Navigate to success page with payment details
     navigate("/order/success", {
       state: {
-        orderTotal: parseInt(orderData.total_amount),
+        orderTotal: displayTotalAmount,
         items: orderData.items,
         orderNumber: orderData.orderId,
         paymentIntent: paymentIntent,
@@ -444,9 +467,7 @@ export const PaymentPage = () => {
                     ) : (
                       <>
                         <CreditCard className="w-5 h-5" />
-                        <span>
-                          Pay ${parseInt(orderData.total_amount).toFixed(2)}
-                        </span>
+                        <span>Pay ${displayTotalAmount.toFixed(2)}</span>
                       </>
                     )}
                   </button>
@@ -474,6 +495,7 @@ export const PaymentPage = () => {
                       onSuccess={handlePaymentSuccess}
                       onError={handlePaymentError}
                       setupIntentClientSecret={setupIntentClientSecret}
+                      totalAmount={displayTotalAmount}
                     />
                   </Elements>
                 ) : (

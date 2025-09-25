@@ -5,6 +5,7 @@ export const getFoodStock = (food) => {
 
   const candidates = [
     food.stock,
+    food.stock_qty,
     food.stock_count,
     food.stockCount,
     food.available_stock,

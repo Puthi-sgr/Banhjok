@@ -42,6 +42,31 @@ export const FoodDetail = () => {
     }
   }, [food]);
 
+  useEffect(() => {
+    if (!food?.id) {
+      return;
+    }
+
+    const cartItem = state.items.find(
+      (item) => item.id === food.id && item.userId === user?.id
+    );
+
+    const remaining = Math.max(stockCount - (cartItem?.quantity ?? 0), 0);
+
+    setQuantity((prevQuantity) => {
+      if (stockCount <= 0) {
+        return 0;
+      }
+
+      if (remaining <= 0) {
+        return 0;
+      }
+
+      const safeQuantity = prevQuantity === 0 ? 1 : prevQuantity;
+      return Math.min(safeQuantity, remaining);
+    });
+  }, [stockCount, state.items, food?.id, user?.id]);
+
   if (loading || vendorLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -68,19 +93,79 @@ export const FoodDetail = () => {
     );
   }
 
+  const handleDecreaseQuantity = () => {
+    if (isOutOfStock) {
+      return;
+    }
+
+    setQuantity((prev) => Math.max(1, prev - 1));
+  };
+
+  const handleIncreaseQuantity = () => {
+    if (isOutOfStock) {
+      return;
+    }
+
+    const cartItem = state.items.find(
+      (item) => item.id === food.id && item.userId === user?.id
+    );
+
+    const remaining = Math.max(stockCount - (cartItem?.quantity ?? 0), 0);
+
+    if (remaining <= 0) {
+      return;
+    }
+
+    setQuantity((prev) => Math.min(remaining, prev + 1));
+  };
+
   const handleAddToCart = () => {
     if (!user) {
       navigate("/auth");
       return;
     }
 
-    for (let i = 0; i < quantity; i++) {
+    if (isOutOfStock) {
+      return;
+    }
+
+    const cartItem = state.items.find(
+      (item) => item.id === food.id && item.userId === user?.id
+    );
+    const existingQuantity = cartItem?.quantity ?? 0;
+    const availableToAdd = Math.max(stockCount - existingQuantity, 0);
+
+    if (availableToAdd <= 0) {
+      return;
+    }
+
+    const quantityToAdd = Math.min(quantity, availableToAdd);
+
+    for (let i = 0; i < quantityToAdd; i += 1) {
       addItem(food);
     }
-    setQuantity(1);
+
+    const remainingStock = Math.max(
+      stockCount - (existingQuantity + quantityToAdd),
+      0
+    );
+
+    setQuantity((currentQuantity) => {
+      if (remainingStock <= 0) {
+        return 0;
+      }
+
+      if (currentQuantity === 0) {
+        return Math.min(remainingStock, stockCount);
+      }
+
+      return Math.min(currentQuantity, remainingStock);
+    });
   };
 
-  const isInCart = state.items.some((item) => item.id === food.id);
+  const isInCart = state.items.some(
+    (item) => item.id === food.id && item.userId === user?.id
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -180,8 +265,14 @@ export const FoodDetail = () => {
                 </span>
                 <div className="flex items-center space-x-3">
                   <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="bg-gray-200 hover:bg-gray-300 text-gray-700 p-2 rounded-full"
+                    onClick={handleDecreaseQuantity}
+                    disabled={isOutOfStock || quantity <= 1}
+                    aria-disabled={isOutOfStock || quantity <= 1}
+                    className={`bg-gray-200 text-gray-700 p-2 rounded-full transition-colors ${
+                      isOutOfStock || quantity <= 1
+                        ? "cursor-not-allowed opacity-60"
+                        : "hover:bg-gray-300"
+                    }`}
                   >
                     <Minus className="w-4 h-4" />
                   </button>
@@ -189,8 +280,18 @@ export const FoodDetail = () => {
                     {quantity}
                   </span>
                   <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="bg-gray-200 hover:bg-gray-300 text-gray-700 p-2 rounded-full"
+                    onClick={handleIncreaseQuantity}
+                    disabled={
+                      isOutOfStock || quantity >= stockCount || stockCount <= 0
+                    }
+                    aria-disabled={
+                      isOutOfStock || quantity >= stockCount || stockCount <= 0
+                    }
+                    className={`bg-gray-200 text-gray-700 p-2 rounded-full transition-colors ${
+                      isOutOfStock || quantity >= stockCount || stockCount <= 0
+                        ? "cursor-not-allowed opacity-60"
+                        : "hover:bg-gray-300"
+                    }`}
                   >
                     <Plus className="w-4 h-4" />
                   </button>
@@ -198,14 +299,22 @@ export const FoodDetail = () => {
               </div>
               <button
                 onClick={handleAddToCart}
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
+                disabled={isOutOfStock || quantity === 0}
+                aria-disabled={isOutOfStock || quantity === 0}
+                className={`w-full text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 ${
+                  isOutOfStock || quantity === 0
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-orange-500 hover:bg-orange-600"
+                }`}
               >
                 <ShoppingCart className="w-4 h-4 font-bold" />
-                Add to Cart - ${(food.price * quantity).toFixed(2)}
+                {isOutOfStock || quantity === 0
+                  ? "Out of Stock"
+                  : `Add to Cart - $${(food.price * quantity).toFixed(2)}`}
               </button>
               {isInCart && (
                 <p className="text-green-600 text-sm mt-2 text-center">
-                  ✓ This item is already in your cart
+                  This item is already in your cart
                 </p>
               )}
             </div>

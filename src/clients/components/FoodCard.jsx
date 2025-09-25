@@ -22,6 +22,10 @@ export const FoodCard = ({ food, showVendor = true, viewMode = "grid" }) => {
       return;
     }
 
+    if (isOutOfStock) {
+      return;
+    }
+
     addItem(food);
   };
 
@@ -45,7 +49,13 @@ export const FoodCard = ({ food, showVendor = true, viewMode = "grid" }) => {
               />
               <button
                 onClick={handleAddToCart}
-                className="absolute top-2 right-2 bg-white hover:bg-orange-50 text-orange-600 rounded-full p-2 shadow-md transition-colors opacity-0 group-hover:opacity-100"
+                disabled={isOutOfStock}
+                aria-disabled={isOutOfStock}
+                className={`absolute top-2 right-2 bg-white text-orange-600 rounded-full p-2 shadow-md transition-colors opacity-0 group-hover:opacity-100 ${
+                  isOutOfStock
+                    ? "cursor-not-allowed group-hover:opacity-60"
+                    : "hover:bg-orange-50"
+                }`}
               >
                 <Plus className="w-4 h-4" />
               </button>
@@ -136,7 +146,13 @@ export const FoodCard = ({ food, showVendor = true, viewMode = "grid" }) => {
           />
           <button
             onClick={handleAddToCart}
-            className="absolute top-2 right-2 bg-white hover:bg-orange-50 text-orange-600 rounded-full p-2 shadow-md transition-colors opacity-0 group-hover:opacity-100"
+            disabled={isOutOfStock}
+            aria-disabled={isOutOfStock}
+            className={`absolute top-2 right-2 bg-white text-orange-600 rounded-full p-2 shadow-md transition-colors opacity-0 group-hover:opacity-100 ${
+              isOutOfStock
+                ? "cursor-not-allowed group-hover:opacity-60"
+                : "hover:bg-orange-50"
+            }`}
           >
             <Plus className="w-4 h-4" />
           </button>
