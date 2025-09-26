@@ -314,6 +314,19 @@ const AuthPage = () => {
               </button>
             </div>
 
+            {userType === 'admin' && !isRegister && (
+              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
+                <p className="font-semibold mb-2">Admin Test Credentials</p>
+                <div className="space-y-1 font-mono">
+                  <p>Email: systemAdmin@example.com</p>
+                  <p>Password: AdminPassword123</p>
+                </div>
+                <p className="mt-2 text-xs text-blue-700">
+                  Use these credentials to access the admin dashboard during testing.
+                </p>
+              </div>
+            )}
+
             {userType === 'customer' && (
               <div className="text-center">
                 <button

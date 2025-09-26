@@ -421,6 +421,37 @@ export const PaymentPage = () => {
             <p className="text-gray-600">Secure payment powered by Stripe</p>
           </div>
 
+          <div className="mb-6 rounded-lg border border-orange-200 bg-orange-50 p-4">
+            <div className="flex items-start">
+              <AlertCircle className="w-5 h-5 text-orange-500 mt-0.5" />
+              <div className="ml-3 text-sm text-orange-800 space-y-2">
+                <p className="font-semibold">Manual Entry Required</p>
+                <p>
+                  Stripe Elements only accepts card numbers entered by hand.
+                  Use the Stripe test card details below when checking out:
+                </p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <div>
+                    <span className="font-medium">Card Number:</span>{" "}
+                    <span className="font-mono">4242 4242 4242 4242</span>
+                  </div>
+                  <div>
+                    <span className="font-medium">Expiry:</span>{" "}
+                    <span className="font-mono">12/25</span>
+                  </div>
+                  <div>
+                    <span className="font-medium">CVC:</span>{" "}
+                    <span className="font-mono">123</span>
+                  </div>
+                </div>
+                <p className="text-xs text-orange-700">
+                  Enter the details manually in the card fields to simulate a
+                  successful test payment.
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Payment Mode Selection */}
           <div className="mb-6">
             <div className="flex space-x-4 mb-4">

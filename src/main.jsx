@@ -9,8 +9,16 @@ import { CartProvider } from "./clients/contexts/CartContext.jsx";
 import { FoodProvider } from "./clients/contexts/FoodContext.jsx";
 import { VendorProvider } from "./clients/contexts/VendorContext.jsx";
 
+const basename = (() => {
+  const rawBase = import.meta.env.BASE_URL || "/";
+  const normalized = rawBase.endsWith("/") && rawBase.length > 1
+    ? rawBase.slice(0, -1)
+    : rawBase;
+  return normalized === "" ? "/" : normalized;
+})();
+
 createRoot(document.getElementById("root")).render(
-  <BrowserRouter>
+  <BrowserRouter basename={basename}>
     <AuthProvider>
       <ThemeProvider>
         <DataProvider>
