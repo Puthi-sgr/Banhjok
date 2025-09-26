@@ -70,7 +70,7 @@ npm run lint
 
 ## Deployment (GitHub Pages)
 
-The project is configured for deployment to the `Puthi-sgr/Banhjok` GitHub Pages site. The Vite base path automatically switches when the `DEPLOY_TARGET=GH_PAGES` flag is provided.
+The project is configured for deployment to the `Puthi-sgr/Banhjok` GitHub Pages site. Vite is always built with the `/Banhjok/` base path so GitHub Pages content resolves correctly.
 
 ```bash
 # build with the correct base path and publish the dist/ folder to gh-pages
